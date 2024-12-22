@@ -1,5 +1,6 @@
 import streamlit as st
 import toml
+import paramiko
 
 # Leer configuraciones locales desde config.toml
 config = toml.load(".streamlit/config.toml")
