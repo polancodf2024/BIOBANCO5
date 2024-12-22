@@ -1,4 +1,5 @@
-[files]
-local_file_xlsx = "respuestas_cuestionario_acumulado.xlsx"
-local_file_csv = "identificaciones.csv"
-lock_file = "acumulado_excel_file.lock"
+[server]
+enableXsrfProtection = true  # Protección XSRF para peticiones de usuario
+
+[client]
+hideMenuItems = true         # Oculta el menú de ajustes
