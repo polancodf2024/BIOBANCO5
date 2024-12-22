@@ -2,15 +2,18 @@ import csv
 import paramiko
 import os
 import pandas as pd
-import streamlit as st
 from datetime import datetime
 from filelock import FileLock
 
 # Importar configuraciones generales y sensibles
-from config import LOCAL_FILE_XLSX, LOCAL_FILE_CSV, LOCK_FILE
 import streamlit as st
 
-# Lectura de configuraciones sensibles desde secrets.toml
+# Configuraciones locales desde config.toml
+LOCAL_FILE_XLSX = st.config["files"]["local_file_xlsx"]
+LOCAL_FILE_CSV = st.config["files"]["local_file_csv"]
+LOCK_FILE = st.config["files"]["lock_file"]
+
+# Configuraciones remotas desde secrets.toml
 REMOTE_HOST = st.secrets["remote"]["host"]
 REMOTE_USER = st.secrets["remote"]["user"]
 REMOTE_PASSWORD = st.secrets["remote"]["password"]
@@ -18,6 +21,7 @@ REMOTE_PORT = st.secrets["remote"]["port"]
 REMOTE_DIR = st.secrets["remote"]["dir"]
 REMOTE_FILE_XLSX = st.secrets["files"]["remote_file_xlsx"]
 REMOTE_FILE_CSV = st.secrets["files"]["remote_file_csv"]
+
 
 
 # Conexión al servidor remoto
