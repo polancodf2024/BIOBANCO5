@@ -3,9 +3,6 @@ import toml
 
 # Leer configuraciones locales desde config.toml
 config = toml.load(".streamlit/config.toml")
-LOCAL_FILE_XLSX = config["files"]["local_file_xlsx"]
-LOCAL_FILE_CSV = config["files"]["local_file_csv"]
-LOCK_FILE = config["files"]["lock_file"]
 
 # Configuraciones remotas desde secrets.toml
 REMOTE_HOST = st.secrets["remote"]["host"]
@@ -15,6 +12,10 @@ REMOTE_PORT = st.secrets["remote"]["port"]
 REMOTE_DIR = st.secrets["remote"]["dir"]
 REMOTE_FILE_XLSX = st.secrets["files"]["remote_file_xlsx"]
 REMOTE_FILE_CSV = st.secrets["files"]["remote_file_csv"]
+
+LOCAL_FILE_XLSX = st.secrets["files"]["local_file_xlsx"]
+LOCAL_FILE_CSV = st.secrets["files"]["local_file_csv"]
+LOCK_FILE = st.secrets["files"]["lock_file"]
 
 
 
