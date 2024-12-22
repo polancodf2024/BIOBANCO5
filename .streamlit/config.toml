@@ -1,17 +1,4 @@
-[server]
-headless = true
-port = 8501
-enableCORS = false
-
-[theme]
-primaryColor = "#4CAF50"
-backgroundColor = "#FFFFFF"
-secondaryBackgroundColor = "#F0F0F5"
-textColor = "#000000"
-font = "sans serif"
-
-[logger]
-level = "error"
-
-[runner]
-magicEnabled = false
+[files]
+local_file_xlsx = "respuestas_cuestionario_acumulado.xlsx"
+local_file_csv = "identificaciones.csv"
+lock_file = "acumulado_excel_file.lock"
