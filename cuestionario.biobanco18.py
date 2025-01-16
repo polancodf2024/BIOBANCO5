@@ -23,9 +23,6 @@ LOCAL_FILE_XLSX = st.secrets["files"]["local_file_xlsx"]
 LOCAL_FILE_CSV = st.secrets["files"]["local_file_csv"]
 LOCK_FILE = st.secrets["files"]["lock_file"]
 
-
-
-
 # Conexión al servidor remoto
 def connect_to_remote():
     try:
@@ -76,7 +73,7 @@ def generar_identificacion(prefijo):
         reader = csv.reader(file)
         rows = list(reader)
         last_id = int(rows[-1][0]) if len(rows) > 1 else 0
-    
+
     nuevo_id = last_id + 1
     with open(LOCAL_FILE_CSV, mode='a', newline='', encoding='utf-8') as file:
         writer = csv.writer(file)
@@ -94,9 +91,27 @@ def generar_cuestionario():
         responses['Fecha de entrevista'] = st.date_input('Fecha de entrevista', value=datetime.now()).strftime('%d/%m/%Y')
         responses['Procedencia del paciente'] = st.selectbox(
             'Procedencia del paciente',
-            ['Consulta externa lado A', 'Consulta externa lado B', 'Clínica Arritmias', 'Clínica Coagulación',
-             'Clínica Valvulares', 'Clínica Hipertensión', 'Clínica Insuficiencia Cardiaca', 'Donador Control']
+            ['Cardiopatía isquémica', 
+            'Cirugía electiva', 
+            'Clínica arritmias', 
+            'Clínica coagulación',
+            'Clínica hipertensión', 
+            'Clínica insuficiencia cardiaca', 
+            'Clínica valvulares', 
+            'Complejo  aórtico', 
+            'Consulta externa lado A', 
+            'Consulta externa lado B', 
+            'Donador control', 
+            'Factores de riesgo', 
+            'Hipertensión arterial sistémica', 
+            'Miocardiopatía', 
+            'Síndrome disantonómico',
+            'Transplante'],
+            key='procedencia'
         )
+
+        if not responses['Procedencia del paciente']:
+            st.error("Debe seleccionar la procedencia del paciente.")
 
         num_registro = st.text_input('Núm. registro INCICh')
         if not num_registro.isdigit():
@@ -123,12 +138,9 @@ def generar_cuestionario():
             imc = 0.0
         responses['Índice de masa corporal (IMC)'] = imc
 
-        responses['Circunferencia de cintura (cm)'] = st.number_input('Circunferencia de cintura (cm)', min_value=50.0, max_value=150.0)
         responses['Tensión arterial Sistólica (mmHg)'] = st.number_input('Tensión arterial Sistólica (mmHg)', min_value=50, max_value=220)
         responses['Tensión arterial Diastólica (mmHg)'] = st.number_input('Tensión arterial Diastólica (mmHg)', min_value=40, max_value=130)
         responses['Frecuencia cardiaca (lpm)'] = st.number_input('Frecuencia cardiaca (lpm)', min_value=40, max_value=120)
-
-        responses['Grupo étnico'] = st.selectbox('Grupo étnico', ['Indígena', 'Mestizo', 'Afrodescendiente', 'Otro'])
 
         st.text("¿Dónde nació usted y sus familiares?")
         estados_mexico = [
@@ -147,23 +159,25 @@ def generar_cuestionario():
         responses['¿Dónde nació su madre?'] = st.selectbox('¿Dónde nació su madre?', estados_mexico)
         responses['¿Dónde nació usted?'] = st.selectbox('¿Dónde nació usted?', estados_mexico)
 
-        st.text("¿Tuvo o tiene familiar(es) con alguna de las siguientes enfermedades?")
+        st.text("¿Tuvo o tiene familiar(es) con alguna enfermedad del corazón?")
+
         enfermedades = [
             'Cardiopatía congénita', 'Angina', 'Valvulopatía', 'Cardiopatía pulmonar',
             'Arritmia cardiaca', 'Coágulos sanguíneos', 'Hipertensión', 'Dislipidemia',
-            'Diabetes', 'Insuficiencia cardíaca'
+            'Diabetes', 'Sobrepreso/Obesidad'
         ]
-        familiares = ['Madre', 'Padre', 'Ambos', 'Hermano(a)', 'Ninguno']
-        enfermedades_respuestas = {enfermedad: {familiar: False for familiar in familiares} for enfermedad in enfermedades}
+
+        opciones = [' ', 'Sí', 'No', 'No sabe']
+
+        enfermedades_respuestas = {
+            enfermedad: None for enfermedad in enfermedades
+        }
 
         for enfermedad in enfermedades:
-            st.write(f"**{enfermedad}**")
-            cols = st.columns(len(familiares))
-            for idx, familiar in enumerate(familiares):
-                enfermedades_respuestas[enfermedad][familiar] = cols[idx].checkbox(familiar, key=f"{enfermedad}_{familiar}")
+            enfermedades_respuestas[enfermedad] = st.radio(f"**{enfermedad}**", opciones, key=f"{enfermedad}")
+
         responses['Familiares con enfermedades específicas'] = enfermedades_respuestas
 
-        st.text("Complete las siguientes preguntas:")
         preguntas = [
             "¿Fuma usted actualmente?",
             "¿En los últimos 3 meses ha tomado alcohol?",
@@ -175,11 +189,12 @@ def generar_cuestionario():
             "¿Tiene hipertensión?",
             "¿Le han indicado medicamento para la hipertensión?"
         ]
-        opciones = ['Sí', 'No', 'No sabe']
+
+        opciones_preguntas = [' ', 'Sí', 'No', 'No sabe']
 
         preguntas_respuestas = {}
         for pregunta in preguntas:
-            preguntas_respuestas[pregunta] = st.radio(pregunta, opciones, key=pregunta)
+            preguntas_respuestas[pregunta] = st.radio(pregunta, opciones_preguntas, key=pregunta)
 
         responses['Preguntas adicionales'] = preguntas_respuestas
 
@@ -187,16 +202,13 @@ def generar_cuestionario():
             '¿Firmó el paciente el consentimiento informado?', ['Sí', 'No'], key='firma_consentimiento'
         )
 
-        if responses['Procedencia del paciente'] == 'Donador Control':
-            prefijo = 'CB'
-        else:
-            prefijo = st.selectbox('Si "Procedencia del Paciente = Donador Control", implica que "Identificación de la muestra = CB"', ['PB', 'CB'])
+        prefijo = 'CB' if responses.get('Procedencia del paciente') == 'Donador control' else st.selectbox('ID Muestra: "PB = Paciente Biobanco", "CB = Control Biobanco"', ['PB', 'CB'])
 
         whatsapp = st.text_input('Proporcione el WhatsApp del donante:')
         if not whatsapp.isdigit() or len(whatsapp) != 10:
             st.error('El número de WhatsApp debe contener exactamente 10 dígitos.')
         else:
-            responses['WhatsApp'] = whatsapp            
+            responses['WhatsApp'] = whatsapp
 
         email = st.text_input('Proporcione el correo electrónico del donante:', value="No proporcionó email")
         responses['Correo electrónico'] = email
@@ -215,49 +227,29 @@ def generar_cuestionario():
     return None
 
 # Guardar respuestas localmente
-#def guardar_respuestas(responses):
-#    df_respuestas = pd.DataFrame([responses])
-#    with FileLock(LOCK_FILE):
-#        if os.path.exists(LOCAL_FILE_XLSX):
-#            df_existente = pd.read_excel(LOCAL_FILE_XLSX)
-#            df_final = pd.concat([df_existente, df_respuestas], ignore_index=True)
-#            df_final = df_final.loc[:, ~df_final.columns.duplicated(keep='first')]  # Eliminar columnas duplicadas
-#        else:
-#            df_final = df_respuestas
-#        df_final.to_excel(LOCAL_FILE_XLSX, index=False, engine='openpyxl')
-
 def guardar_respuestas(responses):
-    # Convertir la respuesta en un DataFrame
     df_respuestas = pd.DataFrame([responses])
 
     with FileLock(LOCK_FILE):
         if os.path.exists(LOCAL_FILE_XLSX):
-            # Leer el archivo existente
             df_existente = pd.read_excel(LOCAL_FILE_XLSX)
 
-            # Verificar si la columna 'ID' existe, si no, crearla
             if 'ID' not in df_existente.columns:
                 df_existente['ID'] = range(1, len(df_existente) + 1)
 
-            # Asignar un nuevo ID a la nueva fila
             nuevo_id = df_existente['ID'].max() + 1
             df_respuestas['ID'] = nuevo_id
 
-            # Combinar los datos existentes con los nuevos
             df_final = pd.concat([df_existente, df_respuestas], ignore_index=True)
         else:
-            # Crear el archivo inicial con ID = 1
             df_respuestas['ID'] = 1
             df_final = df_respuestas
 
-    # Guardar el DataFrame en el archivo Excel
     df_final.to_excel(LOCAL_FILE_XLSX, index=False, engine='openpyxl')
-
 
 # Función principal
 def main():
     ssh_client, sftp_client = connect_to_remote()
-    # Mostrar el logo y título
     st.image("escudo_COLOR.jpg", width=150)
     if ssh_client and sftp_client:
         try:
