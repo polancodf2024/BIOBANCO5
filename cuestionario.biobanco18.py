@@ -4,6 +4,7 @@ import os
 import pandas as pd
 import streamlit as st
 import toml
+import paramiko
 from datetime import datetime
 from filelock import FileLock
 
@@ -159,11 +160,18 @@ def generar_cuestionario():
         responses['¿Dónde nació su madre?'] = st.selectbox('¿Dónde nació su madre?', estados_mexico)
         responses['¿Dónde nació usted?'] = st.selectbox('¿Dónde nació usted?', estados_mexico)
 
-        st.text("¿Tuvo o tiene familiar(es) con alguna enfermedad del corazón?")
+        # Pregunta general
+        st.text("¿Tuvo o tiene familiares con alguna enfermedad del corazón?")
+
+        # Opciones de respuesta
+        opciones = [' ', 'Sí', 'No', 'No sabe']
+        respuesta_general = st.radio("Seleccione una opción:", opciones, key="enfermedades_familiares")
+
+
+        st.text("¿Tuvo o tiene familiar(es) con?")
 
         enfermedades = [
-            'Cardiopatía congénita', 'Angina', 'Valvulopatía', 'Cardiopatía pulmonar',
-            'Arritmia cardiaca', 'Coágulos sanguíneos', 'Hipertensión', 'Dislipidemia',
+            'Hipertensión', 'Dislipidemia',
             'Diabetes', 'Sobrepreso/Obesidad'
         ]
 
