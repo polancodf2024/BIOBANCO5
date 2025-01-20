@@ -5,6 +5,7 @@ import pandas as pd
 import streamlit as st
 import toml
 import paramiko
+import time
 from datetime import datetime
 from filelock import FileLock
 
@@ -25,16 +26,19 @@ LOCAL_FILE_CSV = st.secrets["files"]["local_file_csv"]
 LOCK_FILE = st.secrets["files"]["lock_file"]
 
 # Conexión al servidor remoto
-def connect_to_remote():
-    try:
-        ssh_client = paramiko.SSHClient()
-        ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh_client.connect(REMOTE_HOST, username=REMOTE_USER, password=REMOTE_PASSWORD, port=REMOTE_PORT)
-        sftp_client = ssh_client.open_sftp()
-        return ssh_client, sftp_client
-    except Exception as e:
-        st.error(f"Error al conectar al servidor remoto: {e}")
-        return None, None
+def connect_to_remote(retries=3, delay=5):
+    for attempt in range(retries):
+        try:
+            ssh_client = paramiko.SSHClient()
+            ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            ssh_client.connect(REMOTE_HOST, username=REMOTE_USER, password=REMOTE_PASSWORD, port=REMOTE_PORT)
+            sftp_client = ssh_client.open_sftp()
+            return ssh_client, sftp_client
+        except Exception as e:
+            st.warning(f"Intento {attempt + 1} de conexión fallido: {e}")
+            time.sleep(delay)
+    st.error("No se pudo conectar al servidor remoto después de varios intentos.")
+    return None, None
 
 # Descargar archivo remoto
 def download_file(sftp_client, remote_file, local_file):
@@ -156,51 +160,26 @@ def generar_cuestionario():
         responses['¿Dónde nació su madre?'] = st.selectbox('¿Dónde nació su madre?', estados_mexico)
         responses['¿Dónde nació usted?'] = st.selectbox('¿Dónde nació usted?', estados_mexico)
 
-        # Pregunta general
-        st.text("¿Tuvo o tiene familiares con alguna enfermedad del corazón?")
+        st.error("Tuvo o tiene familiares con alguna de las siguientes enfermedades?")
 
-        # Opciones de respuesta
-        opciones = [' ', 'Sí', 'No', 'No sabe']
-        respuesta_general = st.radio("Seleccione una opción:", opciones, key="enfermedades_familiares")
+        responses['Tuvo o tiene familiar(es) con alguna enfermedad del corazón?'] = st.selectbox('Tuvo  o tiene familiar(es) con alguna enfermedad del corazón?', ['', 'Sí', 'No', 'No sabe'], key='q_corazon')
+        responses['Tuvo o tiene familiar(es) con hipertensión?'] = st.selectbox('Tuvo  o tiene familiar(es) con hipertensión?', [' ', 'Sí', 'No', 'No sabe'], key='q_hipertension')
+        responses['Tuvo o tiene familiar(es) con dislipidemia?'] = st.selectbox('Tuvo  o tiene familiar(es) con dislipidemia?', [' ', 'Sí', 'No', 'No sabe'], key='q_dislipidemia')
+        responses['Tuvo o tiene familiar(es) con diabetes?'] = st.selectbox('Tuvo  o tiene familiar(es) con diabetes?', [' ', 'Sí', 'No', 'No sabe'], key='q_diabetes')
+        responses['Tuvo o tiene familiar(es) con sobrepeso/obesidad?'] = st.selectbox('Tuvo  o tiene familiar(es) con sobrepeso/obesidad?', [' ', 'Sí', 'No', 'No sabe'], key='q_obesidad')
 
+        st.error("Tiene usted alguno de los siguientes hábitos  o enfermedades?")
 
-        st.text("¿Tuvo o tiene familiar(es) con?")
+        responses['Fuma usted actualmente?'] = st.selectbox('Fuma  usted actualmente?', [' ', 'Sí', 'No', 'No sabe'], key='q1_fuma')
+        responses['En los últimos 3 meses ha tomado alcohol?'] = st.selectbox('En los últimos 3 meses ha tomado alcohol?', [' ', 'Sí', 'No', 'No sabe'], key='q1_alcohol')
+        responses['Tiene exceso de peso?'] = st.selectbox('Tiene exceso de peso?', [' ', 'Sí', 'No', 'No sabe'], key='q1_peso')
+        responses['Tiene diabetes?'] = st.selectbox('Tiene diabetes?', [' ', 'Sí', 'No', 'No sabe'], key='q1_diabetes')
 
-        enfermedades = [
-            'Hipertensión', 'Dislipidemia',
-            'Diabetes', 'Sobrepreso/Obesidad'
-        ]
-
-        opciones = [' ', 'Sí', 'No', 'No sabe']
-
-        enfermedades_respuestas = {
-            enfermedad: None for enfermedad in enfermedades
-        }
-
-        for enfermedad in enfermedades:
-            enfermedades_respuestas[enfermedad] = st.radio(f"**{enfermedad}**", opciones, key=f"{enfermedad}")
-
-        responses['Familiares con enfermedades específicas'] = enfermedades_respuestas
-
-        preguntas = [
-            "¿Fuma usted actualmente?",
-            "¿En los últimos 3 meses ha tomado alcohol?",
-            "¿Tiene exceso de peso?",
-            "¿Tiene diabetes?",
-            "¿Le han indicado medicamento para la diabetes?",
-            "¿Tiene dislipidemia?",
-            "¿Le han indicado medicamento para la dislipidemia?",
-            "¿Tiene hipertensión?",
-            "¿Le han indicado medicamento para la hipertensión?"
-        ]
-
-        opciones_preguntas = [' ', 'Sí', 'No', 'No sabe']
-
-        preguntas_respuestas = {}
-        for pregunta in preguntas:
-            preguntas_respuestas[pregunta] = st.radio(pregunta, opciones_preguntas, key=pregunta)
-
-        responses['Preguntas adicionales'] = preguntas_respuestas
+        responses['Le han indicado medicamento para diabetes?'] = st.selectbox('Le han indicado medicamento para diabetes?', [' ', 'Sí', 'No', 'No sabe'], key='q1_medicamento')
+        responses['Tiene usted dislipidemia?'] = st.selectbox('Tiene usted dislipidemia?', [' ', 'Sí', 'No', 'No sabe'], key='q1_dislipidemia')
+        responses['Le han indicado medicamento para la dislipidemia?'] = st.selectbox('Le ha indicado medicamento para la dislipidemia?', [' ', 'Sí', 'No', 'No sabe'], key='q1_meddisli')            
+        responses['Tiene usted hipertensión?'] = st.selectbox('Tiene usted hipertensión?', [' ', 'Sí', 'No', 'No sabe'], key='q1_tienehiper')            
+        responses['Le han indicado medicamento para la hipertensión?'] = st.selectbox('Le han indicado medicamento  para la hipertensión?', [' ', 'Sí', 'No', 'No sabe'], key='q1_medihipertension')            
 
         responses['¿El paciente firmó el consentimiento informado para participar como donador del Biobanco del INCICh?'] = st.selectbox(
             '¿Firmó el paciente el consentimiento informado?', ['Sí', 'No'], key='firma_consentimiento'
