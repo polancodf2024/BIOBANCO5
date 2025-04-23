@@ -52,11 +52,10 @@ def enviar_archivo_remoto(local_file, remote_file):
 
 # Función principal
 def main():
-    # Solicitar contraseña al inicio
-    PASSWORD = "tt5plco5"
+    # Solicitar contraseña al inicio (usando REMOTE_PASSWORD)
     input_password = st.text_input("Ingresa la contraseña para acceder:", type="password")
-    if input_password != PASSWORD:
-        st.error("Escribe la contraseña correcta, y presiona ENTER.")
+    if input_password != REMOTE_PASSWORD:
+        st.error("Contraseña incorrecta. Por favor ingrese la contraseña válida.")
         st.stop()
 
     # Sincronización automática al iniciar
@@ -133,4 +132,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
